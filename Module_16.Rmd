@@ -1,0 +1,95 @@
+---
+title: "Module 16"
+author: "Erin Anderson"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r, include=TRUE}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/zombies.csv")
+z <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
+m1 <- lm(data = z, height ~ age * gender)  # full model
+m2 <- lm(data = z, height ~ age + gender)  # model without interactions
+m3 <- lm(data = z, height ~ age)  # model with one predictor
+m4 <- lm(data = z, height ~ 1)  # intercept only model
+anova(m2, m1, test = "F")  # compares the reduced model without interactions (m2) to the full model with interactions (m1)
+f <- ((summary(m1)$r.squared - summary(m2)$r.squared) * (nrow(z) - 3 - 1))/((1 -
+    summary(m1)$r.squared) * (3 - 2))
+f
+```
+
+```{r 1, include=TRUE}
+p <- 1 - pf(f, df1 = 3 - 2, df2 = nrow(z) - 3, lower.tail = TRUE)  # df1 = q-p, df2 = n-q
+p
+```
+
+```{r 2, include=TRUE}
+anova(m3, m2, test = "F")  # compares the age only model (m3) to the age + gender model (m2)
+```
+```{r 3, include=TRUE}
+f <- ((summary(m2)$r.squared - summary(m3)$r.squared) * (nrow(z) - 2 - 1))/((1 -
+    summary(m2)$r.squared) * (2 - 1))
+f
+p <- 1 - pf(f, df1 = 2 - 1, df2 = nrow(z) - 2, lower.tail = TRUE)  # df1 = q-p, df2 = n-q
+p
+```
+
+```{r 4, include=TRUE}
+m0 <- lm(data = z, height ~ 1)
+summary(m0)
+```
+
+```{r 5, include=TRUE}
+add1(m0, scope = . ~ . + age + weight + zombies_killed + years_of_education,
+    test = "F")
+```
+```{r 6, include=TRUE}
+m1 <- update(m0, formula = . ~ . + weight)
+summary(m1)
+```
+```{r 7, include=TRUE}
+add1(m1, scope = . ~ . + age + weight + zombies_killed + years_of_education,
+    test = "F")
+```
+```{r 8, include=TRUE}
+summary(m2)
+```
+```{r 9, include=TRUE}
+m0 <- lm(data = z, height ~ age + weight + zombies_killed + years_of_education)
+summary(m0)
+```
+```{r 10, include=TRUE}
+drop1(m0, test = "F")
+```
+
+```{r 11, include=TRUE}
+m1 <- update(m0, . ~ . - years_of_education)
+summary(m1)
+```
+
+```{r 12, include=TRUE}
+drop1(m1, test = "F")
+```
+
+```{r 13, include=TRUE}
+m2 <- update(m1, . ~ . - zombies_killed)
+summary(m2)
+```
+
+```{r 14, include=TRUE}
+drop1(m2, test = "F")
+```
+
+```{r 15, include=TRUE}
+summary(m2)
+```
+
+```{r 16, include=TRUE}
+library(MASS)
+stepAIC(m0, direction = "both")
+```
+```{r 17, include=TRUE}
+library(AICcmodavg)
+print(aictab(list(m0, m1, m2), c("m0", "m1", "m2")), LL = FALSE)
+```
+
